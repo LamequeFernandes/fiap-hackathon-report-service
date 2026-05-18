@@ -28,7 +28,7 @@ _REPORT_PAYLOAD = {
 _REPORT_RESPONSE = {**_REPORT_PAYLOAD, "created_at": _NOW}
 
 
-# ── Fixture: HTTP client with mocked DB session ───────────────────────────────
+# Fixture: HTTP client with mocked DB session
 
 @pytest.fixture
 async def client():
@@ -43,9 +43,7 @@ async def client():
     app.dependency_overrides.clear()
 
 
-# ─────────────────────────────────────────────
 # Health
-# ─────────────────────────────────────────────
 
 async def test_health(client):
     response = await client.get("/health")
@@ -55,9 +53,7 @@ async def test_health(client):
     assert data["service"] == "report-service"
 
 
-# ─────────────────────────────────────────────
 # POST /reports
-# ─────────────────────────────────────────────
 
 async def test_create_report_success(client, mock_report):
     with patch("app.presentation.routes.ReportRepository"), \
@@ -108,9 +104,7 @@ async def test_create_report_idempotent(client, mock_report):
     assert r2.status_code == 201
 
 
-# ─────────────────────────────────────────────
 # GET /reports/{analysis_id}
-# ─────────────────────────────────────────────
 
 async def test_get_report_success(client, mock_report):
     with patch("app.presentation.routes.ReportRepository"), \
