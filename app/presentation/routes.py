@@ -1,11 +1,13 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.create_report import CreateReportUseCase
 from app.application.use_cases.get_report import GetReportUseCase
+from app.core.config import settings
 from app.domain.exceptions import ReportNotFoundError
 from app.infrastructure.database.repositories import ReportRepository
 from app.infrastructure.database.session import get_session
@@ -19,13 +21,27 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+_internal_key_header = APIKeyHeader(name="X-Internal-API-Key", auto_error=False)
+
+
+async def _verify_internal_auth(key: str = Security(_internal_key_header)) -> None:
+    """Validates the shared secret sent by internal services (e.g. processing-service)."""
+    if key != settings.internal_api_key:
+        raise HTTPException(status_code=403, detail="Forbidden: invalid internal API key")
+
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])
 async def health() -> HealthResponse:
     return HealthResponse(status="healthy", service="report-service")
 
 
-@router.post("/reports", status_code=201, response_model=ReportResponse, tags=["reports"])
+@router.post(
+    "/reports",
+    status_code=201,
+    response_model=ReportResponse,
+    tags=["reports"],
+    dependencies=[Depends(_verify_internal_auth)],
+)
 async def create_report(
     body: CreateReportRequest,
     session: AsyncSession = Depends(get_session),

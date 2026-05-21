@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 from app.domain.exceptions import ReportNotFoundError
 from app.infrastructure.database.session import get_session
 from app.main import app
+from app.presentation.routes import _verify_internal_auth
 
 pytestmark = pytest.mark.asyncio
 
@@ -36,6 +37,8 @@ async def client():
         yield AsyncMock()
 
     app.dependency_overrides[get_session] = _override_session
+    # Internal auth is tested separately; bypass it for business-logic focused tests.
+    app.dependency_overrides[_verify_internal_auth] = lambda: None
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
