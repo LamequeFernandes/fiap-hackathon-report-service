@@ -29,6 +29,17 @@ Armazena e serve relatórios técnicos gerados pelo processing-service após a a
 }
 ```
 
+## Diagrama
+
+```mermaid
+flowchart LR
+    PS([processing-service]) -->|POST /reports · X-Internal-API-Key| V{Já existe para<br>este analysis_id?}
+    V -- não --> DB[(PostgreSQL<br>report_db)]
+    V -- sim --> N([idempotente: ignora])
+    GW([api-gateway]) -->|GET /reports/:id| DB
+    DB -->|relatório JSON| GW
+```
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Descrição |
